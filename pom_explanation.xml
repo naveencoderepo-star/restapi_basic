@@ -1,0 +1,97 @@
+pom.xml 
+
+1. PROJECT IDENTITY 
+
+<groupId>com.api</groupId>
+<artifactId>basic-restassured</artifactId>
+<version>1.0</version>
+
+
+group id - company name
+artifactid - project name
+version - current version
+
+
+-------------------------------------------------------------------------
+2. BUILD & COMPILER CONFIGURATION
+
+<maven.compiler.source>11</maven.compiler.source>
+<maven.compiler.target>11</maven.compiler.target>
+
+Which Java version should be used to compile the code
+
+Add on points,
+
+source = developer use panra java syntax version
+target = generated class file yentha java version la run aaganum
+
+
+
+----------------------------------------------------------------------------
+
+3.UTF Encoding
+
+<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>Why?
+
+To avoid special character issues.
+
+Example:
+
+Mac
+Windows
+Linux
+
+Special characters ella OS la same ah read aaganum nu use pannrom.
+
+
+
+--------------------------------------------------------------------------------------
+
+4. DEPENDENCIES (MOST IMPORTANT)
+
+Without dependencies: It will download the dependencies to local if not available,
+
+
+Rest Assured won’t work
+TestNG won’t work
+Jackson won’t work
+
+
+--------------------------------------
+
+
+5. PLUGINS (Workers uses the tool to run the code)
+
+<maven-surefire-plugin>
+
+Dependency = software/tools
+Plugin = worker doing action
+
+
+To run TestNg Execution
+To generate reports
+To run parallel executing 
+
+-------------------------------------------------------
+
+6. MAVEN BUILD LIFECYCLE
+
+mvn clean   delete old files
+mvn compile   compile java code
+mvn test   executes TestNG tests & Generate the reports 
+
+------------------------------------------------------
+
+
+mvn clean test
+
+1. Clean old target files
+2. Validate project
+3. Download missing dependencies
+4. Compile source code
+5. Compile test code
+6. Execute TestNG/JUnit tests
+7. Generate reports/results
+
+
+pom.xml is the central configuration file in Maven which manages project metadata, dependencies, plugins, compiler settings and build lifecycle execution for the automation framework.

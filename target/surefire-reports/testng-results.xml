@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results ignored="0" total="5" passed="5" failed="0" skipped="0">
+  <reporter-output>
+  </reporter-output>
+  <suite started-at="2026-05-26T18:32:23 IST" name="Login API Tests" finished-at="2026-05-26T18:32:29 IST" duration-ms="6216">
+    <groups>
+    </groups>
+    <test started-at="2026-05-26T18:32:23 IST" name="Login Scenarios" finished-at="2026-05-26T18:32:29 IST" duration-ms="6216">
+      <class name="com.api.tests.LoginTest">
+        <test-method is-config="true" signature="setup()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:23 IST" name="setup" finished-at="2026-05-26T18:32:24 IST" duration-ms="662" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setup -->
+        <test-method signature="test01_validLogin_shouldReturn200()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:24 IST" name="test01_validLogin_shouldReturn200" description="Valid credentials → 200 OK" finished-at="2026-05-26T18:32:27 IST" duration-ms="2952" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- test01_validLogin_shouldReturn200 -->
+        <test-method signature="test02_wrongPassword_shouldReturnError()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:27 IST" name="test02_wrongPassword_shouldReturnError" description="Wrong password → error response" finished-at="2026-05-26T18:32:27 IST" duration-ms="727" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- test02_wrongPassword_shouldReturnError -->
+        <test-method signature="test03_emptyMobile_shouldReturn4xxError()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:27 IST" name="test03_emptyMobile_shouldReturn4xxError" description="Empty mobile → 4xx validation error" finished-at="2026-05-26T18:32:28 IST" duration-ms="594" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- test03_emptyMobile_shouldReturn4xxError -->
+        <test-method signature="test04_responseTime_shouldBeLessThan5Seconds()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:28 IST" name="test04_responseTime_shouldBeLessThan5Seconds" description="Response time should be under 5000ms" finished-at="2026-05-26T18:32:28 IST" duration-ms="600" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- test04_responseTime_shouldBeLessThan5Seconds -->
+        <test-method signature="test05_readFieldFromResponse_learningTemplate()[pri:0, instance:com.api.tests.LoginTest@5e82df6a]" started-at="2026-05-26T18:32:28 IST" name="test05_readFieldFromResponse_learningTemplate" description="Read a specific field from the response JSON" finished-at="2026-05-26T18:32:29 IST" duration-ms="616" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- test05_readFieldFromResponse_learningTemplate -->
+      </class> <!-- com.api.tests.LoginTest -->
+    </test> <!-- Login Scenarios -->
+  </suite> <!-- Login API Tests -->
+</testng-results>

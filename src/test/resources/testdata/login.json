@@ -1,0 +1,36 @@
+{
+  "LEARNING_NOTE": "Each block here is one test scenario. Add as many as you need.",
+
+  "valid_user": {
+    "mobile"      : "9840127991",
+    "password"    : "12345678",
+    "accountType" : "STAFF",
+    "platformType": "WEB",
+    "deviceId"    : "e7027d46-9446-4a0c-8ff8-5fde2de9af9c",
+    "token"       : "",
+    "latitude"    : "13.061361543287191",
+    "longitude"   : "80.26007440007787"
+  },
+
+  "wrong_password": {
+    "mobile"      : "9840127991",
+    "password"    : "WRONG999",
+    "accountType" : "STAFF",
+    "platformType": "WEB",
+    "deviceId"    : "e7027d46-9446-4a0c-8ff8-5fde2de9af9c",
+    "token"       : "",
+    "latitude"    : "13.061361543287191",
+    "longitude"   : "80.26007440007787"
+  },
+
+  "empty_mobile": {
+    "mobile"      : "",
+    "password"    : "12345678",
+    "accountType" : "STAFF",
+    "platformType": "WEB",
+    "deviceId"    : "e7027d46-9446-4a0c-8ff8-5fde2de9af9c",
+    "token"       : "",
+    "latitude"    : "13.061361543287191",
+    "longitude"   : "80.26007440007787"
+  }
+}
