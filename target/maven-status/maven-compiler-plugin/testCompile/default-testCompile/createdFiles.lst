@@ -1,2 +1,2 @@
-com\api\tests\BaseTest.class
-com\api\tests\LoginTest.class
+com/api/tests/LoginTest.class
+com/api/tests/BaseTest.class

@@ -1,0 +1,414 @@
+
+================================================================================
+   ConfigReader.java — Full Explanation (Tanglish)
+   Written by: Senior Lead Automation Tester Perspective
+================================================================================
+
+
+📌 1. PURPOSE (Enna Kku Indha Class?)
+══════════════════════════════════════
+
+Indha ConfigReader class oda main purpose enna na —
+config.properties file la irundhu key=value data va read pannradhu.
+
+Realtime Example:
+─────────────────
+Namma project la base URL, username, password, environment name
+ellam test files la directly hardcode panna koodadhu.
+
+Apdi pannitom na enna aagum?
+→ 10 test files la "https://dev-api.example.com" nu URL write pannitom.
+→ Next day team sonna, "staging URL ku change pannu" nu.
+→ Ipo 10 files la poi oru oru file la maathanum. Migavum kashtam, thappu varum.
+
+Adha avoid panna dhan indha ConfigReader use pannrom.
+→ config.properties nu oru SINGLE file la ellaa values um vaippom.
+→ ConfigReader class moolam read pannurom.
+→ URL maathanum na? config.properties la ONNU MATTUM maathina podhum.
+   Ellaa 10 tests um automatically new value eduthukum.
+
+Idhu dhan "Centralized Configuration Management" nu solluvaanga.
+
+
+📌 2. JAVA CONCEPTS USED (Enna Enna Java Concepts Use Aagirukku?)
+══════════════════════════════════════════════════════════════════
+
+Indha small class la NIRAIYA important Java concepts use aagirukku.
+Interview la kooda kelpaanga. Oru oru concept ah paapom:
+
+
+────────────────────────────────────────
+🔹 Concept 1: Properties Class (java.util.Properties)
+────────────────────────────────────────
+
+Properties nu oru Java built-in class. Idhu .properties file read panna
+specially designed aana class.
+
+.properties file format eppadi irukum na:
+
+    base.url=https://dev-api.example.com
+    username=admin
+    password=admin123
+
+Idhu oru key=value pair file. Properties class indha format ah easy ah
+read pannum.
+
+Code la eppadi use aagirukku:
+
+    private static final Properties properties = new Properties();
+
+→ "properties" nu oru object create pannirukkom.
+→ "private" — veliya yaaru access panna mudiyaadhu.
+→ "static" — class level la irukkum, object create panna vendaam.
+→ "final" — indha variable ah re-assign panna mudiyaadhu (value maathalaaam,
+   aanaa variable ah vera object ku point panna mudiyaadhu).
+
+
+────────────────────────────────────────
+🔹 Concept 2: Static Block (Static Initializer)
+────────────────────────────────────────
+
+Idhu MIGAVUM IMPORTANT concept. Interview la 100% kelpaanga.
+
+    static {
+        // indha code auto-run aagum
+    }
+
+Static block enna na:
+→ Java class ah FIRST TIME load pannum bodhu,
+  indha block AUTOMATIC ah run aagum.
+→ Main method kku munnadiye run aagum.
+→ ONNRU MATTUM THADAVA run aagum (only once).
+
+Indha class la static block use panna REASON:
+→ config.properties file ah class load aagum bodhu ONNU THADAVA read
+  pannittu properties object la store pannidurom.
+→ Appuram yaaru "ConfigReader.get("base.url")" nu call pannaalum,
+  file ah thirumba thirumba read panna vendaam. Already loaded aagirukku.
+
+Idhu "Eager Loading" pattern maari — class load aagum bodhu udanee data
+ready ah irukkum.
+
+
+────────────────────────────────────────
+🔹 Concept 3: ClassLoader & getResourceAsStream()
+────────────────────────────────────────
+
+    ConfigReader.class.getClassLoader().getResourceAsStream("config.properties")
+
+Indha line ah break pannu paapom:
+
+1) ConfigReader.class
+   → Current class oda Class object ah edukum
+
+2) .getClassLoader()
+   → Java oda ClassLoader ah edukum. ClassLoader dhan class files ah
+     memory la load pannum.
+
+3) .getResourceAsStream("config.properties")
+   → src/test/resources folder (or src/main/resources) la irukura
+     "config.properties" file ah InputStream ah open pannum.
+
+Yaen ippadi file read pannrom? Normal "new File()" use panna koodaadha?
+→ Maven/Gradle project la, resources folder la irukura files "classpath"
+  la varum.
+→ getResourceAsStream() classpath la irundhu read pannum — idhu
+  portable ah irukkum (Windows, Mac, Linux ellam same ah work aagum).
+→ Normal file path potaa, machine maari maari path maathanum.
+  Idhu avoid aagum.
+
+
+────────────────────────────────────────
+🔹 Concept 4: InputStream
+────────────────────────────────────────
+
+    InputStream inputStream = ...
+
+InputStream enna na — file oda content ah bytes ah padikaradhu.
+Idhu oru pipe maari — file irundhu data bytes ah flow aagum.
+
+Properties class oda .load() method ku InputStream kudutha,
+adhu file content ah padichu key=value pairs ah parse pannidum.
+
+
+────────────────────────────────────────
+🔹 Concept 5: try-with-resources (AutoCloseable)
+────────────────────────────────────────
+
+    try (InputStream inputStream = ...) {
+        // use inputStream here
+    }
+
+Normal try-catch theriyum la? Indha try(...) with resources vera maari.
+
+→ try() brackets la InputStream create pannrom.
+→ Indha block mudinjathum Java AUTOMATIC ah inputStream ah close pannum.
+→ Error vanthaalum close pannum.
+→ Naama manually inputStream.close() nu ezhudha vendaam.
+
+Idhu Java 7 la introduce aana feature.
+InputStream, FileReader, Connection — ellam AutoCloseable implement
+pannum, adhanala try-with-resources la use pannalaam.
+
+Yaen important?
+→ Close panna marandhom na "resource leak" aagum — memory waste aagum,
+  file lock aagum, connection pool full aagum.
+→ try-with-resources use pannaa indha problem varaadhu.
+
+
+────────────────────────────────────────
+🔹 Concept 6: RuntimeException (Unchecked Exception)
+────────────────────────────────────────
+
+    throw new RuntimeException("config.properties not found!");
+
+RuntimeException enna na — unchecked exception.
+→ Idha throws keyword la declare panna vendaam.
+→ Method signature la mention panna vendaam.
+→ Program ah UDANE niruthi error message kaattum.
+
+Indha class la 2 idathula RuntimeException throw pannrom:
+
+1) config.properties file eh kaanala na:
+   "ERROR: config.properties not found!" nu clear ah sollurom.
+
+2) get() method la key kaanala na:
+   "Key 'base.url' not found" nu sollurom, plus available keys ah
+   list pannidum — debugging ku romba useful.
+
+Yaen RuntimeException use pannrom? IOException use panna koodaadha?
+→ Config file illaina framework eh START AAGAVEY KOODADHU.
+→ Apparam oru oru test la try-catch ezhudha vendaam — adhu messy.
+→ RuntimeException potaa, immediately program stop aagum with clear message.
+→ "Fail Fast" principle nu solluvaanga — error ah early ah catch pannu,
+  late ah debug panna vendaam.
+
+
+────────────────────────────────────────
+🔹 Concept 7: Static Method
+────────────────────────────────────────
+
+    public static String get(String key) {
+        ...
+    }
+
+→ "static" method na, object create pannaama direct ah class name
+  vachu call pannalam:
+
+    ConfigReader.get("base.url")
+
+→ new ConfigReader() nu object create panna VENDAAM.
+→ Utility classes (helper classes) la ivvlo dhan use pannuvaanga.
+
+Method logic:
+1) properties.getProperty(key) — key kku matching value edukum
+2) value null or blank na — RuntimeException throw pannum
+3) Illaina — value.trim() panni return pannum
+   (trim() extra spaces remove pannum)
+
+
+────────────────────────────────────────
+🔹 Concept 8: Encapsulation (private + public access)
+────────────────────────────────────────
+
+    private static final Properties properties = new Properties();
+
+→ "properties" variable PRIVATE — veliya yaaru neeritiyaa access panna
+  mudiyaadhu.
+→ Aanaa "get()" method PUBLIC — veliya irundhu key kudutha value
+  tharurom.
+
+Idhu dhan Encapsulation — internal data ah hide pannu, controlled way
+la veliya expose pannu.
+
+Yaen Encapsulation important?
+→ Yaravadhu direct ah "properties" object ah access pannittu
+  properties.clear() pannitta? Ellaa data um pogum!
+→ Private pottaa avanga access pannvey mudiyaadhu.
+→ get() method moolam mattum dhan read panna mudiyum — safe.
+
+
+📌 3. CODE WALKTHROUGH — LINE BY LINE (Code ah Paapom)
+══════════════════════════════════════════════════════
+
+--------------------------------------------------------
+package com.api.config;
+--------------------------------------------------------
+→ Indha class "com.api.config" package la irukku.
+→ Package na oru folder structure — organize panna use pannom.
+→ config related classes ellam indha package la vaippom.
+
+
+--------------------------------------------------------
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+--------------------------------------------------------
+→ IOException — file read la error vanthaa handle panna
+→ InputStream — file ah bytes ah read panna
+→ Properties — .properties file parse panna
+→ Moonu classes um Java oda standard library la irundhu varudhu.
+  External dependency ILLAY.
+
+
+--------------------------------------------------------
+public class ConfigReader {
+--------------------------------------------------------
+→ "public" — vera packages la irundhu access pannalam
+→ "class" — Java la blueprint/template
+→ "ConfigReader" — class name, file read pannum nu theriyudhu
+
+
+--------------------------------------------------------
+private static final Properties properties = new Properties();
+--------------------------------------------------------
+→ private — indha class ulla mattum access
+→ static — class level variable, object vendaam
+→ final — re-assign panna mudiyaadhu
+→ Properties — key=value store panna oru Map maari
+→ new Properties() — empty Properties object create
+
+
+--------------------------------------------------------
+static {
+    try (InputStream inputStream =
+             ConfigReader.class
+                     .getClassLoader()
+                     .getResourceAsStream("config.properties")) {
+--------------------------------------------------------
+→ static block — class load aagum bodhu auto run
+→ try-with-resources — InputStream auto close aagum
+→ classpath la "config.properties" file ah open pannrom
+
+
+--------------------------------------------------------
+        if (inputStream == null) {
+            throw new RuntimeException(
+                "config.properties not found!" + ...
+            );
+        }
+--------------------------------------------------------
+→ File kaanala na — clear error message with location hint kudukkrom
+→ null check IMPORTANT — illaina NullPointerException varum later,
+  adhu debug panna ROMBA kashtam
+
+
+--------------------------------------------------------
+        properties.load(inputStream);
+        System.out.println("[ConfigReader] config.properties loaded successfully.");
+--------------------------------------------------------
+→ .load() — file content ah parse pannu, key=value pairs ah properties
+  object la store pannu
+→ println — console la success message print pannum
+  (debugging ku useful — file load aachaa illaiyaa nu theriyum)
+
+
+--------------------------------------------------------
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to read config.properties", e);
+    }
+}
+--------------------------------------------------------
+→ IOException — file read la enna error vanthaalum catch pannum
+→ RuntimeException la wrap pannittu throw pannrom
+→ "e" (original exception) ah pass pannrom — stack trace pogaadhu,
+  root cause theriyum
+
+
+--------------------------------------------------------
+public static String get(String key) {
+    String value = properties.getProperty(key);
+--------------------------------------------------------
+→ public static — direct ah ConfigReader.get() nu call pannalam
+→ getProperty(key) — key kku matching value return pannum
+→ key illay na null return pannum
+
+
+--------------------------------------------------------
+    if (value == null || value.isBlank()) {
+        throw new RuntimeException(
+            "Key '" + key + "' not found..." +
+            "Available keys: " + properties.stringPropertyNames()
+        );
+    }
+    return value.trim();
+}
+--------------------------------------------------------
+→ null check + blank check — key illay na or empty string na error throw
+→ stringPropertyNames() — available keys ellam list pannum
+  (developer kku "indha keys irukku, nee wrong key kudutha" nu help aagum)
+→ trim() — leading/trailing spaces remove pannum
+
+
+📌 4. REALTIME USAGE (Test Class La Eppadi Use Panrathu?)
+══════════════════════════════════════════════════════════
+
+config.properties file (src/test/resources/config.properties):
+──────────────────────────────────────────────────────────────
+    base.url=https://sbioa-gateway-dev.coherent.in
+    username=admin
+    password=secret123
+    environment=DEV
+
+Test class la use panrathu:
+───────────────────────────
+    String baseUrl = ConfigReader.get("base.url");
+    // → "https://sbioa-gateway-dev.coherent.in"
+
+    String user = ConfigReader.get("username");
+    // → "admin"
+
+    // Wrong key potaa? UDANE error varum:
+    String x = ConfigReader.get("wrongkey");
+    // → RuntimeException: Key 'wrongkey' not found!
+    //   Available keys: [base.url, username, password, environment]
+
+Paathiyaa? Oru line la value eduthutom. Simple, clean, safe.
+
+
+📌 5. SUMMARY TABLE
+══════════════════════════════════════════════════════════
+
+    ┌──────────────────────────┬───────────────────────────────────────────┐
+    │ Java Concept             │ Edhukku Use Pannrom?                     │
+    ├──────────────────────────┼───────────────────────────────────────────┤
+    │ Properties class         │ .properties file read panna              │
+    │ static block             │ Class load aagum bodhu auto-run          │
+    │ static method            │ Object create pannaama call panna        │
+    │ ClassLoader              │ Classpath la irundhu file read panna     │
+    │ InputStream              │ File content ah bytes ah padikaradhu     │
+    │ try-with-resources       │ Auto close — resource leak avoid panna   │
+    │ RuntimeException         │ Fail fast — udanee error message kaattu  │
+    │ Encapsulation (private)  │ Internal data ah protect panna           │
+    │ final keyword            │ Variable ah re-assign aagaama protect    │
+    │ null check               │ NullPointerException avoid panna         │
+    │ trim()                   │ Extra spaces remove panna                │
+    └──────────────────────────┴───────────────────────────────────────────┘
+
+
+📌 6. INTERVIEW TIPS
+══════════════════════════════════════════════════════════
+
+Q: Why do you use a ConfigReader in your framework?
+A: Centralized configuration management — oru place la maathina podhum,
+   ellaa tests um auto-update aagum. Hardcoding avoid pannrom.
+
+Q: Why static block instead of constructor?
+A: File ah ONNRU THADAVA load pannaa podhum. Static block class load la
+   auto run aagum. Constructor use pannaa, every object creation la
+   thirumba thirumba load aagum — waste.
+
+Q: Why RuntimeException instead of checked exception?
+A: Config file illaina framework START AAGA KOODADHU. Every caller la
+   try-catch ezhudha vendaam. Fail fast approach — early ah problem ah
+   catch pannum.
+
+Q: What happens if config.properties file is missing?
+A: inputStream null varum, naama clear error message throw pannrom —
+   "config.properties not found! Make sure it exists at
+   src/test/resources/config.properties"
+
+================================================================================
+   End of Explanation
+   Prepared by Senior Lead Automation Tester
+================================================================================

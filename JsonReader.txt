@@ -1,0 +1,534 @@
+
+================================================================================
+   JsonReader.java — Full Explanation (Tanglish)
+   Written by: Senior Lead Automation Tester Perspective
+================================================================================
+
+
+📌 1. PURPOSE (Enna Kku Indha Class?)
+══════════════════════════════════════
+
+Indha JsonReader class oda main purpose enna na —
+JSON files la irundhu test data read pannichu, Map ah convert panni,
+RestAssured ku directly kudukaradhu.
+
+Realtime Example:
+─────────────────
+Namma oru Login API test ezhudhurom. Request body ippadi irukum:
+
+    {
+        "mobile": "9840127991",
+        "password": "12345678"
+    }
+
+❌ BAD APPROACH (Thappaana Vazhi):
+    Map<String, Object> body = new HashMap<>();
+    body.put("mobile", "9840127991");       // ← test la hardcode
+    body.put("password", "12345678");       // ← test la hardcode
+
+Enna problem?
+→ 50 tests la body data hardcode pannitom.
+→ Mobile number maathanum na? 50 files la poi maathanum.
+→ Non-technical BA or manual tester ku code maathradhu kashtam.
+
+✅ GOOD APPROACH (Correct Vazhi — JsonReader use panradhu):
+    1. "testdata/login.json" nu oru file la data vaippom
+    2. JsonReader.getAsMap("testdata/login.json", "valid_user") nu call pannurom
+    3. Auto ah Map<String, Object> ah varum — direct ah RestAssured .body() la pass
+    4. Data maathanum na? JSON file la maathina podhum — test code touch pannave vendaam
+
+Idhu dhan "Data-Driven Testing" nu solluvaanga.
+Test logic um test data vum separate — clean and maintainable.
+
+
+📌 2. JAVA & JACKSON CONCEPTS USED (Enna Enna Concepts Use Aagirukku?)
+═══════════════════════════════════════════════════════════════════════
+
+Indha class la Java concepts UM Jackson library concepts UM rendu
+irukku. Oru oru ah paapom:
+
+
+────────────────────────────────────────
+🔹 Concept 1: Jackson Library (ObjectMapper)
+────────────────────────────────────────
+
+Jackson enna na — Java la JSON handle panna MOST POPULAR library.
+Maven/Gradle la dependency add pannirupaanga (pom.xml la paakalam).
+
+Jackson la MAIN class:  ObjectMapper
+
+ObjectMapper enna panna mudiyum?
+→ JSON text → Java Object (Deserialization / Read)
+→ Java Object → JSON text (Serialization / Write)
+
+Code la:
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+→ private — veliya access koodadhu
+→ static — class level, oru copy mattum podhum
+→ final — re-assign panna mudiyaadhu
+→ new ObjectMapper() — Jackson oda main engine create pannrom
+
+Yaen oru ObjectMapper podhum?
+→ ObjectMapper thread-safe for READ operations.
+→ 100 tests onnaa run aanalum (parallel execution), oru ObjectMapper
+  podhum — thread safe ah work aagum.
+→ Every method la new ObjectMapper() create pannaa memory waste — avoid.
+→ Idhu "Singleton-like" pattern — oru instance share panradhu.
+
+
+────────────────────────────────────────
+🔹 Concept 2: JsonNode (Tree Model)
+────────────────────────────────────────
+
+    JsonNode root = objectMapper.readTree(inputStream);
+
+JsonNode enna na — JSON data ah oru TREE STRUCTURE la represent panradhu.
+
+Example JSON:
+    {
+        "valid_user": {
+            "mobile": "9840127991",
+            "password": "12345678"
+        },
+        "invalid_user": {
+            "mobile": "0000000000",
+            "password": "wrongpass"
+        }
+    }
+
+readTree() pannaa indha full JSON oru tree aagum:
+
+    root (JsonNode)
+     ├── "valid_user" (JsonNode)
+     │     ├── "mobile" → "9840127991"
+     │     └── "password" → "12345678"
+     └── "invalid_user" (JsonNode)
+           ├── "mobile" → "0000000000"
+           └── "password" → "wrongpass"
+
+Appuram root.get("valid_user") nu potaa, adhu oda child JsonNode
+kidaikum. Tree la navigate panradhu maari!
+
+Yaen JsonNode use pannrom?
+→ JSON structure theriyaadha bodhu — dynamic ah navigate panna
+→ Oru specific section mattum edukka — root.get("valid_user")
+→ Whole JSON ah oru class ku map pannama, flexible ah handle panna
+
+
+────────────────────────────────────────
+🔹 Concept 3: TypeReference (Generic Type Preservation)
+────────────────────────────────────────
+
+    new TypeReference<Map<String, Object>>() {}
+
+Idhu konjam tricky concept. Explain panren:
+
+Java la "Type Erasure" nu oru concept irukku.
+→ Compile time la Map<String, Object> nu type irukum
+→ Aanaa runtime la Java adha "erase" pannidum — vella Map nu dhan theriyum
+→ Jackson ku "Map<String, Object> ah convert pannu" nu sollanumna,
+  type information runtime la theriyanum
+
+TypeReference solve pannum eppadi?
+→ TypeReference<Map<String, Object>>() {} nu potaa,
+  anonymous inner class create aagum
+→ Indha inner class oda generic type info runtime la um irukum
+→ Jackson adha padichu, "ohhh Map<String, Object> ah convert pannanum" nu
+  purinjukum
+
+Simple ah sonna:
+→ TypeReference = "Jackson kitte type information solluradhu"
+→ Illaina Jackson ku enna type ku convert pannanum nu theriyaadhu
+
+
+────────────────────────────────────────
+🔹 Concept 4: convertValue() Method
+────────────────────────────────────────
+
+    objectMapper.convertValue(section, new TypeReference<Map<String, Object>>() {});
+
+convertValue() enna pannum?
+→ Oru Java object ah VERA type ku convert pannum
+→ Inga JsonNode ah Map<String, Object> ah convert pannrom
+
+Yaen Map<String, Object> venum?
+→ RestAssured oda .body() method ku Map kudukkalaam
+→ given().body(map).post("/login") — idhu valid
+→ RestAssured auto ah Map ah JSON string ah convert pannum
+
+Flow:
+    JSON file → InputStream → readTree() → JsonNode (tree)
+    → root.get("valid_user") → specific JsonNode
+    → convertValue() → Map<String, Object>
+    → RestAssured .body(map)
+
+
+────────────────────────────────────────
+🔹 Concept 5: ClassLoader & getResourceAsStream()
+────────────────────────────────────────
+
+    JsonReader.class.getClassLoader().getResourceAsStream(filePath)
+
+ConfigReader la paathom la — same concept dhan:
+→ src/test/resources/ folder la irukura file ah classpath vazhiyaa read pannum
+→ Platform independent — Windows, Mac, Linux ellam same ah work aagum
+→ filePath = "testdata/login.json" nu kuduthaa,
+  src/test/resources/testdata/login.json ah read pannum
+
+
+────────────────────────────────────────
+🔹 Concept 6: try-with-resources
+────────────────────────────────────────
+
+    try (InputStream inputStream = ...) {
+        // use inputStream
+    }
+
+ConfigReader la paathom la — same concept:
+→ InputStream auto close aagum
+→ Resource leak avoid aagum
+→ Manually close() ezhudha vendaam
+
+
+────────────────────────────────────────
+🔹 Concept 7: Method Composition (read() inside getAsMap())
+────────────────────────────────────────
+
+    public static Map<String, Object> getAsMap(String filePath, String sectionKey) {
+        JsonNode root = read(filePath);   // ← read() method ah call pannrom
+        ...
+    }
+
+getAsMap() method ULLAYE read() method ah call pannrom.
+Idhu "Method Composition" or "Code Reuse".
+
+→ File read panna logic ah read() method la ezhuthirukkrom
+→ getAsMap() la thirumba same logic ezhudha vendaam
+→ read() ah call pannittu, result ah use pannrom
+→ DRY Principle — "Don't Repeat Yourself"
+
+Ipo future la "getAsList()" or "getAsString()" nu vera method venum na,
+same read() method use pannalam — code duplicate aagaadhu.
+
+
+────────────────────────────────────────
+🔹 Concept 8: Defensive Programming (Null Checks + Clear Errors)
+────────────────────────────────────────
+
+Code la 2 idathula null check irukku:
+
+1) read() method la:
+    if (inputStream == null) {
+        throw new RuntimeException("File not found: " + filePath);
+    }
+    → File illaina udanee clear error message
+
+2) getAsMap() method la:
+    if (section == null) {
+        throw new RuntimeException(
+            "Section '" + sectionKey + "' not found in " + filePath +
+            "Available sections: " + root.fieldNames()
+        );
+    }
+    → Key illaina, available keys ellam list pannum
+    → Developer ku "indha keys irukku, nee wrong key kudutha" nu
+      immediately theriyum
+
+Idhu "Fail Fast + Helpful Error Messages" approach.
+→ Silent ah null return pannama, LOUD ah error throw pannrom
+→ Debugging time ROMBA reduce aagum
+
+
+📌 3. CODE WALKTHROUGH — LINE BY LINE (Code ah Paapom)
+══════════════════════════════════════════════════════
+
+--------------------------------------------------------
+package com.api.utils;
+--------------------------------------------------------
+→ "utils" package — utility/helper classes vaikura idham
+→ JsonReader, DataHelper maari reusable classes ellam inga varum
+
+
+--------------------------------------------------------
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+--------------------------------------------------------
+→ Jackson library imports:
+  - TypeReference → generic type ah runtime la preserve panna
+  - JsonNode → JSON tree structure
+  - ObjectMapper → JSON parse/convert engine
+→ Java standard imports:
+  - IOException → file read error handle panna
+  - InputStream → file content bytes ah padikka
+  - Map → key-value pair collection
+
+
+--------------------------------------------------------
+public class JsonReader {
+--------------------------------------------------------
+→ public — vera packages la irundhu access pannalam
+→ class name "JsonReader" — JSON file read pannum nu name la theriyum
+→ Idhu oru Utility class — static methods mattum irukku
+
+
+--------------------------------------------------------
+private static final ObjectMapper objectMapper = new ObjectMapper();
+--------------------------------------------------------
+→ private — veliya access koodadhu, class ulla mattum
+→ static — class level, oru copy mattum, object create panna vendaam
+→ final — vara variable ah re-assign panna mudiyaadhu
+→ ObjectMapper — Jackson oda core engine
+→ Thread-safe for reads — parallel test run ku safe
+
+
+────── read() METHOD ──────
+
+--------------------------------------------------------
+public static JsonNode read(String filePath) {
+--------------------------------------------------------
+→ public static — ConfigReader.get() maari, direct class name la call:
+    JsonReader.read("testdata/login.json")
+→ Return type: JsonNode — full JSON tree return pannum
+→ Parameter: filePath — "testdata/login.json" maari relative path
+
+
+--------------------------------------------------------
+    try (InputStream inputStream =
+                 JsonReader.class
+                         .getClassLoader()
+                         .getResourceAsStream(filePath)) {
+--------------------------------------------------------
+→ try-with-resources — auto close
+→ classpath la irundhu JSON file open pannrom
+→ filePath "testdata/login.json" na,
+  src/test/resources/testdata/login.json ah read pannum
+
+
+--------------------------------------------------------
+        if (inputStream == null) {
+            throw new RuntimeException(
+                    "File not found: " + filePath +
+                    "Make sure it exists under src/test/resources/"
+            );
+        }
+--------------------------------------------------------
+→ File kaanala na clear error + file location hint kudukkrom
+→ Null check illaina later NullPointerException varum — debug kashtam
+
+
+--------------------------------------------------------
+        return objectMapper.readTree(inputStream);
+--------------------------------------------------------
+→ readTree() — JSON content ah parse pannum
+→ Full JSON ah oru JsonNode tree ah return pannum
+→ Indha tree la navigate pannittu specific data edukalam
+
+
+--------------------------------------------------------
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to read: " + filePath, e);
+    }
+}
+--------------------------------------------------------
+→ IOException catch panni RuntimeException la wrap pannrom
+→ Original exception "e" pass pannrom — root cause stack trace la theriyum
+
+
+────── getAsMap() METHOD ──────
+
+--------------------------------------------------------
+public static Map<String, Object> getAsMap(String filePath, String sectionKey) {
+--------------------------------------------------------
+→ Return type: Map<String, Object>
+  - RestAssured .body() ku direct ah kudukkalaam
+→ Parameters:
+  - filePath → JSON file path
+  - sectionKey → JSON la oru specific block oda key name
+
+
+--------------------------------------------------------
+    JsonNode root = read(filePath);
+--------------------------------------------------------
+→ Internal ah read() method call pannrom — code reuse
+→ Full JSON tree kidaikum
+
+
+--------------------------------------------------------
+    JsonNode section = root.get(sectionKey);
+--------------------------------------------------------
+→ root tree la irundhu specific block edukrom
+→ Example: root.get("valid_user") →
+    {
+        "mobile": "9840127991",
+        "password": "12345678"
+    }
+→ Key illay na null varum
+
+
+--------------------------------------------------------
+    if (section == null) {
+        throw new RuntimeException(
+            "Section '" + sectionKey + "' not found in " + filePath +
+            "Available sections: " + root.fieldNames()
+        );
+    }
+--------------------------------------------------------
+→ Section kaanala na clear error throw pannrom
+→ root.fieldNames() — available top-level keys ellam show aagum
+→ Example error:
+  "Section 'valud_user' not found in testdata/login.json
+   Available sections: [valid_user, invalid_user]"
+  (typo "valud" vs "valid" — udanee purinju fix pannalam!)
+
+
+--------------------------------------------------------
+    return objectMapper.convertValue(section, new TypeReference<Map<String, Object>>() {});
+}
+--------------------------------------------------------
+→ convertValue() — JsonNode ah Map<String, Object> ah convert
+→ TypeReference — runtime la type info preserve panna
+→ Return aana Map ah direct ah RestAssured .body() la use pannalam
+
+
+📌 4. FULL FLOW — END TO END (Start to Finish Eppadi Work Aagum?)
+══════════════════════════════════════════════════════════════════
+
+Step 1: JSON file create pannrom
+────────────────────────────────
+File: src/test/resources/testdata/login.json
+
+    {
+        "valid_user": {
+            "mobile": "9840127991",
+            "password": "12345678"
+        },
+        "invalid_user": {
+            "mobile": "0000000000",
+            "password": "wrongpass"
+        }
+    }
+
+Step 2: Test class la JsonReader use pannrom
+────────────────────────────────────────────
+
+    // Oru specific block Map ah edukrom
+    Map<String, Object> body = JsonReader.getAsMap("testdata/login.json", "valid_user");
+    // body = { "mobile" → "9840127991", "password" → "12345678" }
+
+    // RestAssured la direct ah use pannrom
+    given()
+        .contentType(ContentType.JSON)
+        .body(body)
+    .when()
+        .post("/login")
+    .then()
+        .statusCode(200);
+
+Step 3: Vera scenario test panna?
+─────────────────────────────────
+
+    // Same file, vera key:
+    Map<String, Object> body = JsonReader.getAsMap("testdata/login.json", "invalid_user");
+
+    // Appo body = { "mobile" → "0000000000", "password" → "wrongpass" }
+    // Code ONNUM maathala — key mattum maathinom!
+
+
+Step 4: Full JSON tree navigate panna?
+──────────────────────────────────────
+
+    JsonNode root = JsonReader.read("testdata/login.json");
+
+    // Specific value edukka:
+    String mobile = root.get("valid_user").get("mobile").asText();
+    // → "9840127991"
+
+
+📌 5. ConfigReader vs JsonReader — COMPARISON
+══════════════════════════════════════════════
+
+    ┌────────────────────┬──────────────────────────┬──────────────────────────┐
+    │                    │ ConfigReader              │ JsonReader               │
+    ├────────────────────┼──────────────────────────┼──────────────────────────┤
+    │ File type          │ .properties (key=value)  │ .json (nested structure) │
+    │ Library used       │ java.util.Properties     │ Jackson (ObjectMapper)   │
+    │ When to use        │ Simple config values     │ Complex test data (body) │
+    │ Loading strategy   │ static block (once)      │ Every call la read       │
+    │ Return type        │ String                   │ JsonNode or Map          │
+    │ Example data       │ base.url=https://...     │ {"mobile":"9840127991"}  │
+    │ RestAssured use    │ URL, headers             │ Request body             │
+    └────────────────────┴──────────────────────────┴──────────────────────────┘
+
+Simple ah sonna:
+→ ConfigReader = SETTINGS read panna (URL, environment, credentials)
+→ JsonReader = TEST DATA read panna (request body, payloads)
+
+
+📌 6. SUMMARY TABLE — ALL CONCEPTS
+══════════════════════════════════════════════════════════
+
+    ┌──────────────────────────────┬───────────────────────────────────────────┐
+    │ Concept                      │ Edhukku Use Pannrom?                     │
+    ├──────────────────────────────┼───────────────────────────────────────────┤
+    │ ObjectMapper (Jackson)       │ JSON parse & convert panna engine        │
+    │ JsonNode (Tree Model)        │ JSON ah tree structure la represent      │
+    │ readTree()                   │ JSON file → JsonNode tree convert        │
+    │ convertValue()               │ JsonNode → Map<String,Object> convert    │
+    │ TypeReference                │ Runtime la generic type info preserve    │
+    │ ClassLoader                  │ Classpath la irundhu file read panna     │
+    │ InputStream                  │ File content bytes ah read panna         │
+    │ try-with-resources           │ Auto close — resource leak avoid         │
+    │ RuntimeException             │ Fail fast — clear error message          │
+    │ Static methods               │ Object create pannaama call panna       │
+    │ Method Composition           │ getAsMap() ulla read() call — DRY        │
+    │ Null checks                  │ Defensive programming — safe code        │
+    │ fieldNames()                 │ Available keys show panna — debug help   │
+    │ trim() / asText()            │ Clean value edukka                       │
+    └──────────────────────────────┴───────────────────────────────────────────┘
+
+
+📌 7. INTERVIEW TIPS
+══════════════════════════════════════════════════════════
+
+Q: Why do you use a JsonReader in your framework?
+A: Data-driven testing — test data ah JSON file la separate ah vaippom.
+   Test code um data vum separate — clean, maintainable, reusable.
+   Non-technical team members kooda JSON file la data maathalam.
+
+Q: Why Jackson? Gson use panna koodaadha?
+A: Jackson industry standard — Spring Boot default ah Jackson use pannum.
+   Performance better than Gson. Tree model (JsonNode) flexible ah
+   navigate panna easy. Rendu um use pannalam, aanaa Jackson preferred.
+
+Q: Why Map<String, Object> return pannura, specific POJO use panna koodaadha?
+A: Map return pannaa generic ah irukum — any API ku use pannalam.
+   POJO potaa every API kku separate class create pannanum.
+   Small/medium projects ku Map enough. Large projects ku POJO better.
+
+Q: What is TypeReference and why is it needed?
+A: Java la Type Erasure irukku — runtime la generic type info erase aagum.
+   TypeReference use pannaa, runtime la type info preserve aagum.
+   Jackson ku "Map<String, Object> ah convert pannu" nu exactly solluradhu.
+
+Q: What happens if JSON file missing or key wrong?
+A: Clear RuntimeException throw pannrom with helpful message.
+   File missing na → "File not found: testdata/login.json"
+   Key wrong na → "Section 'xyz' not found. Available sections: [valid_user, invalid_user]"
+   Debugging ROMBA easy aagum.
+
+Q: Why readTree() instead of readValue()?
+A: readTree() → JsonNode return — flexible, navigate pannalam
+   readValue() → specific class ku direct map — POJO approach
+   Naama JsonNode first eduthu, apparam specific section ah Map ah
+   convert pannrom — more flexible for dynamic JSON structures.
+
+================================================================================
+   End of Explanation
+   Prepared by Senior Lead Automation Tester
+================================================================================
