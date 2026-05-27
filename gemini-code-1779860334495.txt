@@ -1,0 +1,42 @@
+[ 🌞 MORNING START ]
+                        │
+                        ▼
+            [ CHECK CURRENT STATE ]
+              • git status
+              • git branch
+                        │
+                        ▼
+          [ SYNC LATEST TEAM CODE ]
+              • git checkout main
+              • git pull origin main
+                        │
+                        ▼
+          [ CREATE FEATURE BRANCH ]
+              • git checkout -b login-api-automation
+                (or e.g., add-user-api)
+                        │
+                        ▼
+          [ 💻 WRITE AUTOMATION CODE ]
+                        │
+                        ▼
+           [ SAVE CHANGES LOCALLY ]
+              • git status
+              • git add .
+              • git commit -m "Added login API automation"
+                        │
+                        ▼
+             [ 🚀 PUSH TO GITHUB ]
+              • git push origin login-api-automation
+                        │
+      ┌─────────────────┴─────────────────┐
+      │                                   │
+      ▼                                   ▼
+[ DONE FOR NOW ]               [ 🔄 TEAM MADE CHANGES? ]
+                               (Later Daily Workflow to 
+                                update your current branch)
+                                          │
+                                          ▼
+                               • git checkout main
+                               • git pull origin main
+                               • git checkout login-api-automation
+                               • git merge main
